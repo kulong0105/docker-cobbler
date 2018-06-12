@@ -1,0 +1,7 @@
+#if $getVar("system_name","") != ""
+    #set eth0 = $interfaces.get("eth0", None)
+    #set ip = $eth0.get("ip_address", "")
+    #if $hostname != "" and $ip != ""
+echo "$ip $hostname" >> /etc/hosts
+    #end if
+#end if

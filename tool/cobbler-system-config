@@ -1,0 +1,151 @@
+#!/bin/bash
+
+usage()
+{
+    cat >&2 <<-EOD
+Usage:
+	$0 -g <group>
+
+Example:
+    $0 -g skyaxe1
+EOD
+
+    exit 1
+}
+
+while getopts "g:h" OPT; do
+	case $OPT in
+		g) GROUP=$OPTARG;;
+		h | ?) usage;;
+	esac
+done
+
+[[ -z $GROUP ]] && usage
+
+log_warn()
+{
+	echo -e "\\x1b[1;33mWARNING: $*\\x1b[0m" >&2
+}
+
+log_error()
+{
+	echo -e "\\x1b[1;31mERROR: $* \\x1b[0m" >&2
+}
+
+check_config_file()
+{
+	local config_file=$1
+	local file_content=$(grep -v -e "^#" -e "^$" $config_file)
+
+	local value
+	local check_list="hostname
+	boot_nic
+	netmask
+	mac_addr
+	ip_addr
+	gateway
+	name_server
+	boot_disk"
+
+	if [[ $(basename $config_file) = "skyaxe-app-0" ]]; then
+		check_list="$check_list
+		boot_nic_1
+		netmask_1
+		mac_addr_1
+		ip_addr_1"
+	fi
+
+	for check_item in `echo $check_list`
+	do
+		value=$(echo "$file_content" | grep "$check_item=" | cut -f2 -d"=")
+		[[ $value ]] || {
+			log_error "$check_item is empty in $config_file file"
+			return 1
+		}
+	done
+}
+
+config_cobbler_system()
+{
+	local config_file=$1
+	local run_cmd="docker exec cobbler cobbler"
+
+	if ! $run_cmd profile list | grep -q skyaxe; then
+		$run_cmd profile add --name=skyaxe --distro=centos7-x86_64 --kickstart=/var/lib/cobbler/kickstarts/skyaxe.ks || {
+			log_error "failed to add skyaxe profile"
+			return 1
+		}
+	fi
+
+	local system_name=$(basename $config_file)
+	if $run_cmd system list | grep -q $system_name; then
+		log_warn "cobber system "$system_name" already exist, will skip $config_file config"
+		return 0
+	fi
+
+	local file_content=$(grep -v -e "^#" -e "^$" $config_file)
+
+	local value
+	local items="hostname
+	boot_nic
+	netmask
+	mac_addr
+	ip_addr
+	gateway
+	name_server
+	boot_disk"
+
+	if [[ $(basename $config_file) = "skyaxe-app-0" ]]; then
+		items="$items
+		boot_nic_1
+		netmask_1
+		mac_addr_1
+		ip_addr_1"
+	fi
+
+	for item in `echo $items`
+	do
+		value=$(echo "$file_content" | grep "$item=" | cut -f2 -d"=")
+		eval $item="$value"
+	done
+
+	$run_cmd system add --profile=skyaxe --name=$system_name --interface=$boot_nic --mac=$mac_addr --ip-address=$ip_addr \
+	--netmask=$netmask --static=1 --ksmeta="disk=$boot_disk install_public_key=1 install_private_key=1" || {
+		log_error "failed to config $boot_nic in $config_file file"
+		return 1
+	}
+
+	$run_cmd system edit --profile=skyaxe --name=$system_name --gateway=$gateway --name-servers=$name_server --hostname=$hostname || {
+		log_error "failed to config gateway in $config_file file"
+		return 1
+	}
+
+	if [[ $(basename $config_file) = "skyaxe-app-0" ]]; then
+		$run_cmd system edit --profile=skyaxe --name=$system_name --interface=$boot_nic_1 --mac=$mac_addr_1 --ip-address=$ip_addr_1 \
+		--netmask=$netmask_1 --static=1 || {
+			log_error "failed to config $boot_nic_1 in $config_file file"
+			return 1
+		}
+	fi
+
+	$run_cmd sync || {
+		log_error "faied to sync config in $config_file file"
+		return 1
+	}
+}
+
+cobbler_src=$(dirname $(dirname $(readlink -e -v $BASH_SOURCE)))
+config_dir=$cobbler_src/config/$GROUP
+
+[[ -d $config_dir ]] || {
+	log_error "cannot find dir: $config_dir"
+	exit 1
+}
+
+for config_file in `ls $config_dir/*`
+do
+	check_config_file "$config_file" || exit
+	config_cobbler_system "$config_file" || exit
+done
+
+echo "config cobbler system finished!"

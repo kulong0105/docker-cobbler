@@ -1,0 +1,22 @@
+# hostname config
+hostname="skyaxe-app-0.localdomain"
+
+
+# network config
+boot_nic="eth0"
+netmask="255.255.255.0"
+mac_addr="18:66:DA:B4:1E:2C"
+ip_addr="10.0.0.10"
+
+boot_nic_1="eth1"
+netmask_1="255.255.255.0"
+mac_addr_1="18:66:DA:B4:1E:2D"
+ip_addr_1="192.168.50.240"
+
+gateway="192.168.50.1"
+name_server="192.168.20.17"
+
+
+# disk config
+### please not double quote `sda` ###
+boot_disk=sda

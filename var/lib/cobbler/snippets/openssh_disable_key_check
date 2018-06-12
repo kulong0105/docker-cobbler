@@ -1,0 +1,11 @@
+mkdir -p /root/.ssh
+chmod 600 /root/.ssh
+
+cat > /root/.ssh/config <<EOD
+Host *
+	StrictHostKeyChecking no
+	UserKnownHostsFile=/dev/null
+	LogLevel ERROR
+EOD
+
+chmod 644 /root/.ssh/config

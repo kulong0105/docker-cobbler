@@ -1,0 +1,17 @@
+# hostname config
+hostname="skyaxe-storage-2.localdomain"
+
+
+# network config
+boot_nic="eth0"
+netmask="255.255.255.0"
+mac_addr="80:18:44:E2:CA:20"
+ip_addr="10.0.0.13"
+
+gateway="192.168.50.1"
+name_server="192.168.20.17"
+
+
+# disk config
+### please not double quote `sda` ###
+boot_disk=sdc

@@ -1,0 +1,9 @@
+
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+
+cat > /root/.ssh/authorized_keys <<EOK
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDza8q3SYKAK/BXzaHr64QgauBhaI8Shzdqunrj8AFgeZBej6ZsW8uyIrO4RxXbjGTgPjmD8k+W8Co3DkMR+t3rlxUr/hYQKaznGWCF73PZ5EhiVIZrHSYB8wX5Yk230rT8utc0n0GKyHFpC7tY5ldehOtD9RGV4g0lhn7LLNRA7uA+vAYsWE/5EegrCjU5qfxhnZnjejHKfDfSzWCh1rB+qNw007mddM1k1sqgnTgcmYgKitAAs7HQWCUaokthsLArLqLpYJb+ADxnluPt3uSFPiMTuPDHlLU/TvZDYRw6YGIbDqiRgRIhBq1p+firFaWtYKgMPIIsW11T9PLybRTz root@pxe.localdomain
+EOK
+
+chmod 600 /root/.ssh/authorized_keys
